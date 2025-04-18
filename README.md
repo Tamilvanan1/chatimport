@@ -1,6 +1,8 @@
 # chatimport
 To set up and run the project locally, please follow these steps: 
 
+Update the JWT_SECRET environment variable in the .env file to your JWT secret key, like this: JWT_SECRET=your_jwt_secret_key.
+
   1.npm i 
   2. npx tsc to compile
   3. node dist/app.js to start the server
