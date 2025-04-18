@@ -10,7 +10,7 @@ Update the JWT_SECRET environment variable in the .env file to your JWT secret k
 
 API Endpoints
 🔹 Register API
-Endpoint: /api/auth/register
+Endpoint: /api/auth/registerUser
 
 Method: POST
 
