@@ -1,5 +1,6 @@
 # chatimport
 To set up and run the project locally, please follow these steps: 
+
   1.npm i 
   2. npx tsc to compile
   3. node dist/app.js to start the server
