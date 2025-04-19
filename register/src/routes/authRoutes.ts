@@ -3,6 +3,7 @@ import { importChatHistory, login, register } from '../controllers/authControlle
 import { upload } from '../middleWare/uploadFile';
 import { verifyToken } from '../middleWare/verifyToken';
 
+
 const router = express.Router();
 
 // Register user route
