@@ -11,12 +11,12 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
     try {
         const { userName, email, password } = req.body;
 
-        // Check if any of the required fields are missing
+        
         if (!userName || !email || !password) {
         res.status(400).json({ message: 'All fields are required' });
         }
 
-        // Check if the email already exists
+       
         const [getUser] = await dataBase.query('SELECT email FROM users WHERE email = ?', [email]);
         console.log('getUser:', getUser , ([getUser] as any[]).length);
 
@@ -39,7 +39,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
         console.log("tokentoken",token , JWT_SECRET , process.env.JWT_SECRET)
 
 
-        // Save user to DB (implement saving logic here)
+        
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
@@ -54,13 +54,13 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
     try {
         const { email, password } = req.body;
 
-        // Check if any of the required fields are missing
+        
         if (!email || !password) {
             res.status(400).json({ message: 'All fields are required' });
             return
         }
 
-        // Check if the email exists in the database
+        
         const [getUser] = await dataBase.query('SELECT * FROM users WHERE email = ?', [email]);
         console.log('getUser:', getUser);
 
@@ -71,7 +71,7 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
             return
         }
 
-        // Compare the provided password with the stored hashed password
+       
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
@@ -79,7 +79,7 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
             return
         }
 
-        // Generate a JWT token
+        // JWT token
         const JWT_SECRET = process.env.JWT_SECRET;
 
         if (!JWT_SECRET) {
@@ -96,48 +96,56 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
         
     } catch (error) {
         console.log('Error:', error);
-        next(error); // Pass the error to the global error handler
+        next(error);
     }
 };
 
   
 const importChatHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-
-        if (!req.file ) {
-             res.status(400).json({ message: 'No file uploaded' });
-             return
+        if (!req.file) {
+            res.status(400).json({ message: 'No file uploaded' });
+            return;
         }
 
-        console.log("ffffffffff")
+        const uploadPath = path.join(process.cwd(), 'uploads');
 
-        const filePath = path.join(__dirname , '../../uploads' , req.file?.filename)
-        const workbook = XLSX.readFile(filePath)
-        const sheetName = workbook.SheetNames?.[0]
-        const data: any[] = XLSX.utils.sheet_to_json(workbook.Sheets?.[sheetName])
+        const filePath = path.join(uploadPath, req.file.filename);
 
-        const insertData = data.map(async (row) => {
-            const { sender , receiver , message } = row;
-            if(!sender || !receiver || !message){
-                return null
-            }
-
-            const inserChat = dataBase.query(`INSERT INTO chat_messages (sender , receiver , message) VALUES (? ,? , ?)`, [sender , receiver, message])
-            return inserChat
-        })
-
-        await Promise.all(insertData)
-        fs.unlinkSync(filePath)
+       
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
 
         
-        res.status(200).json({ message: 'User imported successfully' });
-        return
-        
+        const data: { sender: string; receiver: string; message: string }[] =
+            XLSX.utils.sheet_to_json(worksheet, {
+                header: ['sender', 'receiver', 'message'], // manually set headers
+                range: 1 // skip the header row in Excel
+            });
+
+        // Insert messages into DB
+        const insertPromises = data.map(async ({ sender, receiver, message }) => {
+            if (!sender || !receiver || !message) return null;
+
+            return dataBase.query(
+                'INSERT INTO chat_messages (sender, receiver, message) VALUES (?, ?, ?)',
+                [sender, receiver, message]
+            );
+        });
+
+        await Promise.all(insertPromises);
+
+       
+        fs.unlinkSync(filePath);
+
+        res.status(200).json({ message: 'Chat history imported successfully' });
     } catch (error) {
-        console.log('Error:', error);
-        next(error); // Pass the error to the global error handler
+        console.error('Error importing chat history:', error);
+        next(error);
     }
 };
+
   
   
 
