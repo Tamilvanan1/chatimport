@@ -48,6 +48,6 @@ tamil	john	Hey, what's up?
 admin	empployee	Welcome!
 
 ⚙️ Database Configuration
-🔧 Use your own local database credentials in the configuration file (e.g. db.js, or config.js) to connect to the database.
+🔧 Use your own local database credentials in the configuration file (e.g. db.js) to connect to the database.
 
 
