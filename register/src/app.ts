@@ -3,6 +3,7 @@ import authRoutes from './routes/authRoutes';
 import dotenv from 'dotenv';
 dotenv.config();
 
+
 const app: Application = express();
 const port: number = 3001;
 
