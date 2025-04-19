@@ -42,6 +42,11 @@ Headers: Authorization: Bearer ${token}
 Request Body (form-data):
 file: .xl (Excel file)
 
+In the Excel sheet, please add the fields: sender, receiver, and message.
+user1	user2	Hello there!
+tamil	john	Hey, what's up?
+admin	empployee	Welcome!
+
 ⚙️ Database Configuration
 🔧 Use your own local database credentials in the configuration file (e.g. db.js, or config.js) to connect to the database.
 
