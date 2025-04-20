@@ -6,10 +6,27 @@ import path from 'path';
 import * as XLSX from 'xlsx';
 import fs from 'fs';
 
+type UserInput = {
+    userName: string;
+    email: string;
+    password: string;
+};
+
+type LoginInput = {
+    email: string;
+    password: string;
+};
+
+type ChatMessage = {
+    sender: string;
+    receiver: string;
+    message: string;
+};
+
 // Register a new user
 const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { userName, email, password }: { userName: string; email: string; password: string } = req.body;
+        const { userName, email, password }: UserInput = req.body;
 
         if (!userName || !email || !password) {
             res.status(400).json({ message: 'All fields are required' });
@@ -17,7 +34,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
         }
 
         const [getUser] = await dataBase.query('SELECT email FROM users WHERE email = ?', [email]);
-        const existingUser = getUser as Array<{ email: string }>;
+        const existingUser = getUser as { email: string }[];
 
         if (existingUser.length > 0) {
             res.status(400).json({ message: 'User already exists' });
@@ -30,8 +47,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
             [userName, email, hashedPassword]
         );
 
-        const insertResult = result as { insertId: number };
-        const userId = insertResult.insertId;
+        const { insertId: userId } = result as { insertId: number };
 
         const JWT_SECRET = process.env.JWT_SECRET;
         if (!JWT_SECRET) {
@@ -51,7 +67,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
 // Login user
 const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { email, password }: { email: string; password: string } = req.body;
+        const { email, password }: LoginInput = req.body;
 
         if (!email || !password) {
             res.status(400).json({ message: 'All fields are required' });
@@ -59,7 +75,7 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
         }
 
         const [getUser] = await dataBase.query('SELECT * FROM users WHERE email = ?', [email]);
-        const user = (getUser as Array<any>)[0];
+        const user = (getUser as any[])[0];
 
         if (!user) {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -102,22 +118,20 @@ const importChatHistory = async (req: Request, res: Response, next: NextFunction
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        const data: { sender: string; receiver: string; message: string }[] =
-            XLSX.utils.sheet_to_json(worksheet, {
-                header: ['sender', 'receiver', 'message'],
-                range: 1
-            });
+        const data: ChatMessage[] = XLSX.utils.sheet_to_json(worksheet, {
+            header: ['sender', 'receiver', 'message'],
+            range: 1
+        });
 
         const insertPromises = data.map(({ sender, receiver, message }) => {
             if (!sender || !receiver || !message) return null;
-
             return dataBase.query(
                 'INSERT INTO chat_messages (sender, receiver, message) VALUES (?, ?, ?)',
                 [sender, receiver, message]
             );
         });
 
-        await Promise.all(insertPromises);
+        await Promise.all(insertPromises.filter(Boolean));
 
         fs.unlinkSync(filePath);
 
